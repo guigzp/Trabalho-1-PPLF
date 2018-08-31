@@ -23,21 +23,27 @@
   (cond [(empty? lst) empty]
         [ (cons (separa (first (first lst))) (transforma (rest lst)))]))
 
+; Empresas é a constante que armazena os dados do arquivo .csv formatado, é uma lista de listas de strings.
 (define empresas (transforma arquivo))
 
-;(struct dados_acoes (nome date open high low close adj volume))
-(struct dados_acoes (nome date) #:transparent )
+; Define a estrutura dos dados das ações
+(struct dados_acoes (nome date open high low close adj volume) #:transparent)
 
-(define microsoft (list))
+; Lista -> dados_acoes
+; Recebe uma lista de strings e devolve um dado_acoes com os valores das strings
+(define (teste dados)
+  (dados_acoes (first dados)  (second dados) (string->number (third dados)) (string->number (fourth dados))
+               (string->number (fifth dados)) (string->number (sixth dados)) (string->number (seventh dados)) (string->number (eighth dados))))
 
-(define petrobras (list))
+; String, Lista de Listas de String -> Lista de Listas de dados_acoes
+; Filtra a lista de todas as empresas pela string passada, retornando uma lista de listas com somente as empresas com o nome passado
+(define (filtra_empresas nome lst)
+  (cond [(empty? lst) empty]
+        [(equal? nome (first (first lst))) (cons (first lst) (filtra_empresas nome (rest lst)))]
+        [else (filtra_empresas nome (rest lst))]))
 
-(define google (list))
+(define google (filtra_empresas "Google" empresas))
 
-(define teste (dados_acoes "Guilherme" "Zamberlam"))
-(define teste2 (dados_acoes "Eduardo" "Torrezan"))
+(define petrobras (filtra_empresas "Petrobras" empresas))
 
-(define x (lambda (lst)
-            (cond [(empty? lst) empty]
-                  [( = "Google" (first lst)) add
-
+(define microsoft (filtra_empresas "Microsoft" empresas))
