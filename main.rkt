@@ -39,7 +39,7 @@
 ; Filtra a lista de todas as empresas pela string passada, retornando uma lista de listas com somente as empresas com o nome passado
 (define (filtra_empresas nome lst)
   (cond [(empty? lst) empty]
-        [(equal? nome (first (first lst))) (cons (first lst) (filtra_empresas nome (rest lst)))]
+        [(equal? nome (first (first lst))) (cons (teste (first lst)) (filtra_empresas nome (rest lst)))]
         [else (filtra_empresas nome (rest lst))]))
 
 (define google (filtra_empresas "Google" empresas))
