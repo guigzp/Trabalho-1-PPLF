@@ -2,11 +2,28 @@
 
 (require csv-reading)
 
-(define (csvfile->list filename)
-  (call-with-input-file filename
+; Arquivo csv -> Lista de listas
+; Função que recebe um arquivo .csv e retorna uma lista de listas separando por quebra de linha, sendo cada linha uma lista.
+(define (ler_arquivo nome_arquivo)
+  (call-with-input-file nome_arquivo
                         csv->list))
+; String -> Lista
+; Função que recebe uma String e devolve uma Lista com os elementos da String original separados por ";"
+(define (separa string)
+  (string-split string ";" #:repeat? #t))
 
-(define empresas (csvfile->list "dados.csv"))
+; Le o .csv para arquivo
+(define arquivo (ler_arquivo "dados.csv"))
+
+; Lista -> Lista
+; Função para arrumar os dados gerados na leitura do .csv, como na leitura cada linha é uma lista de 1 elemento, sendo esse elemento uma String,
+; é necessário separar cada um dos dados desta string, portanto, a função transforma utiliza a função separa para transformar cada lista de string
+; em uma lista de várias strings sem os ; separadores.
+(define (transforma lst)
+  (cond [(empty? lst) empty]
+        [ (cons (separa (first (first lst))) (transforma (rest lst)))]))
+
+(define empresas (transforma arquivo))
 
 ;(struct dados_acoes (nome date open high low close adj volume))
 (struct dados_acoes (nome date) #:transparent )
@@ -17,21 +34,10 @@
 
 (define google (list))
 
-(define (separa string)
-  (string-split string ";" #:repeat? #t))
-
-(define (addend x lst)
-  (cond [(empty? lst) (list x)]
-        [(empty? (rest lst)) (list (first lst) x)]
-        [else
-         (cons (first lst) (addend x (rest lst)))]))
-
 (define teste (dados_acoes "Guilherme" "Zamberlam"))
 (define teste2 (dados_acoes "Eduardo" "Torrezan"))
 
-(separa (first (first empresas)))
-
-(define (tenta lst)
-  (cond [(empty? (rest lst) (first lst))]
-        [else (dados_acoes 
+(define x (lambda (lst)
+            (cond [(empty? lst) empty]
+                  [( = "Google" (first lst)) add
 
