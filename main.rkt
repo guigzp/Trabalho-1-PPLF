@@ -42,20 +42,31 @@
         [(equal? nome (first (first lst))) (cons (teste (first lst)) (filtra_empresas nome (rest lst)))]
         [else (filtra_empresas nome (rest lst))]))
 
+;Estrutura para armazenar os dados do Google
 (define google (filtra_empresas "Google" empresas))
 
+;Estrutura para armazenar os dados da Petrobras
 (define petrobras (filtra_empresas "Petrobras" empresas))
 
+;Estrutura para armazenar os dados da Microsoft
 (define microsoft (filtra_empresas "Microsoft" empresas))
 
+; Lista de dados_acoes -> Numero
+; Devolve a soma da coluna de fechamento de uma lista de ações
 (define (somacoluna lst)
   (cond [(empty? lst) 0]
         [else (+ (dados_acoes-close (first lst)) (somacoluna (rest lst)))]))
 
+; Lista de dados_acoes -> Numero
+; Devolve a soma das colunas de de fechamaento de 2 ações multiplicados
+; (multiplica o valor da lista1 pela lista2 para todos os elementos enquanto os soma)
 (define (somamultiplicado lst1 lst2)
   (cond [(empty? lst1) 0]
         [else (+ ( * (dados_acoes-close (first lst1)) (dados_acoes-close (first lst2)))  (somamultiplicado (rest lst1) (rest lst2)))]))
 
+
+; Lista de dados_acoes, Lista de dados_acoes -> Numero
+; Calcula o indice de correlaçao entre duas empresas
 (define (correlacao acao1 acao2)
   (define x (somacoluna acao1))
   (define y (somacoluna acao2))
@@ -64,7 +75,3 @@
   (define yquadrado (somamultiplicado acao2 acao2))
   (define m (length acao1))
   ( / (- xy (/ (* x y) m)) (sqrt (* ( - yquadrado (/ (* y y) m)) ( - xquadrado (/ (* x x) m))))))
-
-(correlacao google microsoft)
-(correlacao google petrobras)
-(correlacao microsoft petrobras)
