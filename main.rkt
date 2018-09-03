@@ -47,3 +47,24 @@
 (define petrobras (filtra_empresas "Petrobras" empresas))
 
 (define microsoft (filtra_empresas "Microsoft" empresas))
+
+(define (somacoluna lst)
+  (cond [(empty? lst) 0]
+        [else (+ (dados_acoes-close (first lst)) (somacoluna (rest lst)))]))
+
+(define (somamultiplicado lst1 lst2)
+  (cond [(empty? lst1) 0]
+        [else (+ ( * (dados_acoes-close (first lst1)) (dados_acoes-close (first lst2)))  (somamultiplicado (rest lst1) (rest lst2)))]))
+
+(define (correlacao acao1 acao2)
+  (define x (somacoluna acao1))
+  (define y (somacoluna acao2))
+  (define xy (somamultiplicado acao1 acao2))
+  (define xquadrado (somamultiplicado acao1 acao1))
+  (define yquadrado (somamultiplicado acao2 acao2))
+  (define m (length acao1))
+  ( / (- xy (/ (* x y) m)) (sqrt (* ( - yquadrado (/ (* y y) m)) ( - xquadrado (/ (* x x) m))))))
+
+(correlacao google microsoft)
+(correlacao google petrobras)
+(correlacao microsoft petrobras)
