@@ -106,6 +106,21 @@
   (define x (inverte_acoes lst))
     (inverte_acoes (sort x string<? #:key dados_acoes-date)))
 
+
+; Lista de dados_acoes, Numero -> Numero
+; Devolve a soma dos Numero primeiro termos da lista
+(define (soma_qtd acao qtd)
+  (cond [(< (length acao) qtd) -1]
+        [(= 0 qtd) 0]
+        [else (+ (dados_acoes-close (first acao)) (soma_qtd (rest acao) (sub1 qtd)))]))
+
+; Lista de dados_acoes, Numero -> Lista de Numeros
+; Calcula Media Movel ao longo dos dias para um determinado numero de dias, devolve uma lista de medias moveis ao longo do tempo
+(define (media_movel acao dias)
+  (cond [(> dias (length acao)) empty]
+        [(empty? acao) empty]
+        [else (cons ( / (soma_qtd acao dias) dias) (media_movel (rest acao) dias))]))
+
 (define ordenacao-tests
   (test-suite "Testes Ordenacao"
               (check-equal? (ordena_data google_desordenado) google)
