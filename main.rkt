@@ -31,14 +31,12 @@
 ; Define a estrutura dos dados das ações
 (struct dados_acoes (nome date open high low close adj volume) #:transparent)
 
-(define (inverte string)
-  (define x (reverse(string-split string "/" #:repeat? #t)))
-  (string-append (first x) "/" (second x) "/" (third x)))
+
 
 ; Lista de strings -> dados_acoes
 ; Recebe uma lista de strings e devolve um dado_acoes com os valores das strings
 (define (constroi dados)
-  (dados_acoes (first dados)  (inverte(second dados)) (string->number (third dados)) (string->number (fourth dados))
+  (dados_acoes (first dados)  (second dados) (string->number (third dados)) (string->number (fourth dados))
                (string->number (fifth dados)) (string->number (sixth dados)) (string->number (seventh dados)) (string->number (eighth dados))))
 
 ; String, Lista de Listas de String -> Lista de Listas de dados_acoes
@@ -82,6 +80,42 @@
   (define m (length acao1))
   ( / (- xy (/ (* x y) m)) (sqrt (* ( - yquadrado (/ (* y y) m)) ( - xquadrado (/ (* x x) m))))))
 
+(define google_desordenado (shuffle google))
+(define petrobras_desordenado (shuffle petrobras))
+(define microsoft_desordenado (shuffle microsoft))
+
+; String -> String
+; Inverte o ano com o dia de uma string de data do formato xx/xx/xxxx
+(define (inverte string)
+  (define x (reverse(string-split string "/" #:repeat? #t)))
+  (string-append (first x) "/" (second x) "/" (third x)))
+
+; dados_acoes -> dados_acoes
+; Recebe um dados_acoes e devolve o mesmo com os campos da data com o ano e o dia trocados
+(define (inverte_data_acao acao)
+  (dados_acoes (dados_acoes-nome acao) (inverte(dados_acoes-date acao)) (dados_acoes-open acao) (dados_acoes-high acao)
+              (dados_acoes-low acao) (dados_acoes-close acao) (dados_acoes-adj acao) (dados_acoes-volume acao)))
+
+; Lista de dados_acoes -> lista de dados_acoes
+; Recebe uma lista de dados_acoes e devolve a mesma lista mas com todos as datas invertidas seguindo a função inverte_data
+(define (inverte_acoes lst)
+  (cond [(empty? lst) empty]
+        [else (cons (inverte_data_acao (first lst)) (inverte_acoes (rest lst)))]))
+
+; Lista de dados_acoes -> Lista de dados_acoes
+; Ordena uma lista de dados_acoes por data, primeiramente declara uma nova lista que é igual a passada como paramento mas com a data
+; de todos os elementos da forma ANO/MES/DIA. Em seguida é ordenado a string data seguindo em ordem crescente de caracteres.
+; Por último é feita novamente a inversão da data da lista ordenada para voltar para o formato DIA/MES/ANO
+(define (ordena_data lst)
+  (define x (inverte_acoes lst))
+    (inverte_acoes (sort x string<? #:key dados_acoes-date)))
+
+(define ordenacao-tests
+  (test-suite "Testes Ordenacao"
+              (check-equal? (ordena_data google_desordenado) google)
+              (check-equal? (ordena_data petrobras_desordenado) petrobras)
+              (check-equal? (ordena_data microsoft_desordenado) microsoft)))
+
 (define correlacao-tests
   (test-suite "Testes Correlacao"
               (check-equal? (correlacao google microsoft) 0.16036975115981003)
@@ -91,7 +125,3 @@
 (define (executa-testes . testes)
 (run-tests (test-suite "Todos os testes" testes))
 (void))
-
-;(sort google > #:key dados_acoes-volume)
-(define teste (shuffle google))
-
