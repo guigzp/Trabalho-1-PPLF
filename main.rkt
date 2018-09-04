@@ -29,15 +29,12 @@
 (define empresas (transforma arquivo))
 
 ; Define a estrutura dos dados das ações
-(struct dados_acoes (nome date open high low close adj volume) #:transparent)
-
-
+(struct dados_acoes (nome date close) #:transparent)
 
 ; Lista de strings -> dados_acoes
 ; Recebe uma lista de strings e devolve um dado_acoes com os valores das strings
 (define (constroi dados)
-  (dados_acoes (first dados)  (second dados) (string->number (third dados)) (string->number (fourth dados))
-               (string->number (fifth dados)) (string->number (sixth dados)) (string->number (seventh dados)) (string->number (eighth dados))))
+  (dados_acoes (first dados) (second dados) (string->number (sixth dados))))
 
 ; String, Lista de Listas de String -> Lista de Listas de dados_acoes
 ; Filtra a lista de todas as empresas pela string passada, retornando uma lista de listas com somente as empresas com o nome passado
@@ -93,8 +90,7 @@
 ; dados_acoes -> dados_acoes
 ; Recebe um dados_acoes e devolve o mesmo com os campos da data com o ano e o dia trocados
 (define (inverte_data_acao acao)
-  (dados_acoes (dados_acoes-nome acao) (inverte(dados_acoes-date acao)) (dados_acoes-open acao) (dados_acoes-high acao)
-              (dados_acoes-low acao) (dados_acoes-close acao) (dados_acoes-adj acao) (dados_acoes-volume acao)))
+  (dados_acoes (dados_acoes-nome acao) (inverte(dados_acoes-date acao)) (dados_acoes-close acao)))
 
 ; Lista de dados_acoes -> lista de dados_acoes
 ; Recebe uma lista de dados_acoes e devolve a mesma lista mas com todos as datas invertidas seguindo a função inverte_data
