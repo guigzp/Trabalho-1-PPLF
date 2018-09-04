@@ -1,6 +1,8 @@
 #lang racket
 
 (require csv-reading)
+(require rackunit)
+(require rackunit/text-ui)
 
 ; Arquivo csv -> Lista de listas
 ; Função que recebe um arquivo .csv e retorna uma lista de listas separando por quebra de linha, sendo cada linha uma lista.
@@ -21,7 +23,7 @@
 ; em uma lista de várias strings sem os ; separadores.
 (define (transforma lst)
   (cond [(empty? lst) empty]
-        [ (cons (separa (first (first lst))) (transforma (rest lst)))]))
+        [else (cons (separa (first (first lst))) (transforma (rest lst)))]))
 
 ; Empresas é a constante que armazena os dados do arquivo .csv formatado, é uma lista de listas de strings.
 (define empresas (transforma arquivo))
@@ -29,17 +31,21 @@
 ; Define a estrutura dos dados das ações
 (struct dados_acoes (nome date open high low close adj volume) #:transparent)
 
-; Lista -> dados_acoes
+(define (inverte string)
+  (define x (reverse(string-split string "/" #:repeat? #t)))
+  (string-append (first x) "/" (second x) "/" (third x)))
+
+; Lista de strings -> dados_acoes
 ; Recebe uma lista de strings e devolve um dado_acoes com os valores das strings
-(define (teste dados)
-  (dados_acoes (first dados)  (second dados) (string->number (third dados)) (string->number (fourth dados))
+(define (constroi dados)
+  (dados_acoes (first dados)  (inverte(second dados)) (string->number (third dados)) (string->number (fourth dados))
                (string->number (fifth dados)) (string->number (sixth dados)) (string->number (seventh dados)) (string->number (eighth dados))))
 
 ; String, Lista de Listas de String -> Lista de Listas de dados_acoes
 ; Filtra a lista de todas as empresas pela string passada, retornando uma lista de listas com somente as empresas com o nome passado
 (define (filtra_empresas nome lst)
   (cond [(empty? lst) empty]
-        [(equal? nome (first (first lst))) (cons (teste (first lst)) (filtra_empresas nome (rest lst)))]
+        [(equal? nome (first (first lst))) (cons (constroi (first lst)) (filtra_empresas nome (rest lst)))]
         [else (filtra_empresas nome (rest lst))]))
 
 ;Estrutura para armazenar os dados do Google
@@ -75,3 +81,17 @@
   (define yquadrado (somamultiplicado acao2 acao2))
   (define m (length acao1))
   ( / (- xy (/ (* x y) m)) (sqrt (* ( - yquadrado (/ (* y y) m)) ( - xquadrado (/ (* x x) m))))))
+
+(define correlacao-tests
+  (test-suite "Testes Correlacao"
+              (check-equal? (correlacao google microsoft) 0.16036975115981003)
+              (check-equal? (correlacao google petrobras) -0.07983751056182631)
+              (check-equal? (correlacao microsoft petrobras) 0.6372067611547209)))
+
+(define (executa-testes . testes)
+(run-tests (test-suite "Todos os testes" testes))
+(void))
+
+;(sort google > #:key dados_acoes-volume)
+(define teste (shuffle google))
+
