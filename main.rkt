@@ -121,6 +121,17 @@
         [(empty? acao) empty]
         [else (cons ( / (soma_qtd acao dias) dias) (media_movel (rest acao) dias))]))
 
+; String, dados_acao -> String
+; Devolve a proxima data válida
+(define (proxima_data acao data)
+  (cond [(empty? acao) "Data não pertencente ao banco de dados"]
+        [(equal? (dados_acoes-date (first acao)) data)
+         (cond [(empty? (rest acao)) "Não possui data próxima válida"]
+               [else (dados_acoes-date (first (rest acao)))])]
+        [else (proxima_data (rest acao) data)]))
+        
+
+
 (define ordenacao-tests
   (test-suite "Testes Ordenacao"
               (check-equal? (ordena_data google_desordenado) google)
