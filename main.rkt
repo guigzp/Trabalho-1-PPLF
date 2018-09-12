@@ -4,7 +4,7 @@
 (require rackunit)
 (require rackunit/text-ui)
 ;(require plot)
-;(require racket/gui)
+(require racket/gui/base)
 
 ; Arquivo csv -> Lista de listas
 ; Função que recebe um arquivo .csv e retorna uma lista de listas separando por quebra de linha, sendo cada linha uma lista.
@@ -188,11 +188,6 @@
 
 (define (rsi acao quantidade)
   (calculo_rsi (avanca_lista acao quantidade) acao quantidade))
-
-(define x (list 44.34 44.09 44.15 43.61 44.33 44.83 45.10 45.42 45.84 46.08 45.89 46.03 45.61 46.28 46.28 46.00 46.03 46.41 46.22 45.64 46.21 46.25
-                45.71 46.45 45.78 45.35 44.03 44.18 44.22 44.57 43.42 42.66 43.13))
-
-(define y (list 6.02 5.95 5.95 5.98 5.83 5.81 5.86 6.06 6.09))
                               
 ; String, dados_acao -> String
 ; Devolve a proxima data válida
@@ -229,10 +224,27 @@
 (void))
 
 (define ys (macd google ))
-(define (gera teste)
-  (cond [(= teste 0) empty]
-        [else (cons teste (gera (sub1 teste)))]))
+(define (gera valor)
+  (cond [(= valor 0) empty]
+        [else (cons valor (gera (sub1 valor)))]))
 (define xs (reverse (gera (length ys))))
+
+(define (preco acao)
+  (cond [(empty? acao) empty]
+        [else (cons (dados_acoes-close (first acao)) (preco (rest acao)))]))
+
+(define x (preco google))
+(define y (reverse (gera (length x))))
 
 ;(plot (discrete-histogram (map vector xs ys) #:color 'red #:gap 0.5) #:width 2000 #:y-max 15)
 ;(plot (lines (map vector xs ys)) #:out-file "teste.png" #:out-kind 'png)
+;(plot (lines (map vector y x)) #:y-min 1000)
+
+
+
+(define frame (new frame% [label "Simulador de Ações"]))
+
+(define msg (new message% [parent frame]
+                 [label "Simulador de Ações"]))
+                   
+(send frame show #t)
