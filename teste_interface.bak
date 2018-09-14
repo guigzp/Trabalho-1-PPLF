@@ -1,0 +1,34 @@
+#lang racket
+(require racket/gui)
+
+(define frame (new frame% [label "Simulador de Ações"]))
+
+(define msg (new message% [parent frame]
+                 [label "Simulador de Ações"]))
+
+(define panel (new horizontal-pane%
+                   [parent frame]
+                   [vert-margin 10]
+                   [horiz-margin 10]
+                   [alignment '(left bottom)]
+                   [stretchable-width #t]
+                   [stretchable-height #t]))
+
+(define acoes (new radio-box%
+                   [parent panel]
+                   [label "Ações"]
+                   [choices (list "Microsoft" "Google" "Petrobras")]))
+
+(define acoes2 (new radio-box%
+                   [parent panel]
+                   [label "Ações"]
+                   [enabled #f]
+                   [choices (list "Microsoft" "Google" "Petrobras")]))
+
+(define botao (new button%
+                   [parent panel]
+                   [label "Gerar"]
+                   [callback (lambda (button event)
+                               (display (send acoes get-selection)) (send acoes2 enable #t))]))
+
+(send frame show #t)

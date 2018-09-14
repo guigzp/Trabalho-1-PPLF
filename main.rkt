@@ -3,7 +3,7 @@
 (require csv-reading)
 (require rackunit)
 (require rackunit/text-ui)
-;(require plot)
+(require plot)
 (require racket/gui/base)
 
 ; Arquivo csv -> Lista de listas
@@ -238,7 +238,7 @@
 
 ;(plot (discrete-histogram (map vector xs ys) #:color 'red #:gap 0.5) #:width 2000 #:y-max 15)
 ;(plot (lines (map vector xs ys)) #:out-file "teste.png" #:out-kind 'png)
-;(plot (lines (map vector y x)) #:y-min 1000)
+;(define precos_google (plot (lines (map vector y x)#:y-min 1000) ))
 
 
 
@@ -246,5 +246,37 @@
 
 (define msg (new message% [parent frame]
                  [label "Simulador de Ações"]))
-                   
+
+(define acoes (new choice% [parent frame]
+                   [label "Ações"]
+                   [choices (list "Google" "Microsoft" "Petrobras")]))
+
+(define start-permutation (new button%
+                              [parent frame]
+                               [label "Start"]
+                              [vert-margin 10]
+                             [horiz-margin 10]
+                               [callback (lambda (button event)
+                                          (aux (send acoes get-selection)) )]))
+
+(define (aux numero)
+  (define a 0)
+  (define min 1000)
+  (define max 1176)
+  (cond [(= 0 numero) (set! a (preco google)) ]
+        [(= 1 numero) (set! a (preco microsoft)) (set! min 85) (set! max (argmax sqr a))]
+        [(= 2 numero) (set! a (preco petrobras)) (set! min 10) (set! max (argmax sqr a))])
+  
+
+(define f (new frame% [label "Gráfico de Preços"]
+               [width 300]
+               [height 300]))
+(define c (new canvas% [parent f]
+               [paint-callback (lambda (c dc) 
+                                 (plot/dc (lines (map vector y a)#:y-min min #:y-max max )
+                                          (send c get-dc)
+                                          0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
+  (send f show #t))
+  
+
 (send frame show #t)
