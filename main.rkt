@@ -258,9 +258,10 @@
 
 (define frame-opcao-invalida (new frame% [label "Erro"][width 100] [height 100]))
 
-(define msg-opcao-invalida (new message% [label "Opção Inválida!"] [parent frame-opcao-invalida]))
+(define msg-opcao-invalida (new message% [label "Algo está errado!"] [parent frame-opcao-invalida]))
 
-(define botao-opcao-invalida (new button% [label "OK"] [parent frame-opcao-invalida]))
+(define botao-opcao-invalida (new button% [label "OK"] [parent frame-opcao-invalida]
+                                  [callback (lambda (button event) (send frame-opcao-invalida show #f))]))
 
 (define acoes (new radio-box%
                    [parent frame]
@@ -283,12 +284,12 @@
                   [callback (lambda (button event)
                               (define opcao-escolhida (send opcoes get-selection))
                               (define acao-escolhida (send acoes get-selection))
-                              (cond [(false? opcao-escolhida) (send frame-opcao-invalida show #t)]
-                                    [(= 0 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida 0)]
-                                    [(= 1 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
-                                    [(= 2 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
-                                    [(= 3 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
-                                    [(= 4 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida 0)]))]))
+                              (cond 
+                                    [(or (= 1 opcao-escolhida) (= 2 opcao-escolhida) (= 3 opcao-escolhida))
+                                     (cond [(false? (send texto-periodo get-value))
+                                            (send frame-opcao-invalida show #t)]
+                                           [else (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))])]
+                                    [else (geraGrafico opcao-escolhida acao-escolhida 0)]))]))
 
 (define (geraGrafico opcao acao periodo)
   (define precos 0)
