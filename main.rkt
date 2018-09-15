@@ -238,45 +238,108 @@
 
 ;(plot (discrete-histogram (map vector xs ys) #:color 'red #:gap 0.5) #:width 2000 #:y-max 15)
 ;(plot (lines (map vector xs ys)) #:out-file "teste.png" #:out-kind 'png)
-;(define precos_google (plot (lines (map vector y x)#:y-min 1000) ))
-
-
+;(plot (lines (map vector y x)#:y-min 1000) )
 
 (define frame (new frame% [label "Simulador de Ações"]))
 
 (define msg (new message% [parent frame]
                  [label "Simulador de Ações"]))
 
-(define acoes (new choice% [parent frame]
-                   [label "Ações"]
+;(define acoes (new choice% [parent frame]
+          ;         [label "Ações"]
+             ;      [choices (list "Google" "Microsoft" "Petrobras")]))
+
+(define opcoes (new radio-box%
+                   [parent frame]
+                   [label "Opções: "]
+                   [choices (list "Preços" "MMS" "MME" "RSI" "MACD")]
+                   [style (list 'horizontal)]
+                   [vert-margin 10]
+                   [callback (lambda (control event)
+                             (cond [(= 0 (send opcoes get-selection)) (send texto-periodo enable #f)]
+                                   [else (send texto-periodo enable #t)]))]))
+;(send opcoes set-selection #f)
+
+(define frame-opcao-invalida (new frame% [label "Erro"][width 100] [height 100]))
+
+(define msg-opcao-invalida (new message% [label "Opção Inválida!"] [parent frame-opcao-invalida]))
+
+(define botao-opcao-invalida (new button% [label "OK"] [parent frame-opcao-invalida]))
+
+
+(define acoes (new radio-box%
+                   [parent frame]
+                   [label "Ação: "]
+                   [vert-margin 30]
+                   [style (list 'horizontal)]
                    [choices (list "Google" "Microsoft" "Petrobras")]))
 
-(define start-permutation (new button%
-                              [parent frame]
-                               [label "Start"]
-                              [vert-margin 10]
-                             [horiz-margin 10]
-                               [callback (lambda (button event)
-                                          (aux (send acoes get-selection)) )]))
+(define texto-periodo (new text-field%
+                   [parent frame]
+                   [label "Período"]
+                   [enabled #f]
+                   [vert-margin 30]))
 
-(define (aux numero)
-  (define a 0)
+(define botao (new button%
+                  [parent frame]
+                  [label "Gerar"]
+                  [vert-margin 10]
+                  [horiz-margin 10]
+                  [callback (lambda (button event)
+                              (define opcao-escolhida (send opcoes get-selection))
+                              (define acao-escolhida (send acoes get-selection))
+                              (cond [(false? opcao-escolhida) (send frame-opcao-invalida show #t)]
+                                    [(= 0 opcao-escolhida) (geraGraficoPrecoAcoes acao-escolhida)]
+                                    [(= 1 opcao-escolhida) (geraGraficoMMS acao-escolhida (string->number (send texto-periodo get-value)))]
+                                    [(= 2 opcao-escolhida) (geraGraficoMME acao-escolhida (send texto-periodo get-number))]
+                                    [(= 3 opcao-escolhida) (geraGraficoRSI acao-escolhida (send texto-periodo get-number))]))]))
+                                    
+
+(define (geraGraficoPrecoAcoes numero)
+  (define precos 0)
   (define min 1000)
   (define max 1176)
-  (cond [(= 0 numero) (set! a (preco google)) ]
-        [(= 1 numero) (set! a (preco microsoft)) (set! min 85) (set! max (argmax sqr a))]
-        [(= 2 numero) (set! a (preco petrobras)) (set! min 10) (set! max (argmax sqr a))])
+  (cond [(= 0 numero) (set! precos (preco google)) ]
+        [(= 1 numero) (set! precos (preco microsoft)) (set! min 85) (set! max (argmax sqr precos))]
+        [(= 2 numero) (set! precos (preco petrobras)) (set! min 10) (set! max (argmax sqr precos))])
   
+  (define periodo  (reverse (gera (length precos))))
 
-(define f (new frame% [label "Gráfico de Preços"]
+  (define f (new frame% [label "Gráfico de Preços"]
                [width 300]
                [height 300]))
-(define c (new canvas% [parent f]
+  
+  (define c (new canvas% [parent f]
                [paint-callback (lambda (c dc) 
-                                 (plot/dc (lines (map vector y a)#:y-min min #:y-max max )
+                                 (plot/dc (lines (map vector periodo precos)#:y-min min #:y-max max )
                                           (send c get-dc)
                                           0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
   (send f show #t))
+
+
+(define (geraGraficoMMS acao periodo)
+  (define valores 0)
   
+  (cond [(= acao 0) (set! valores (media_movel google periodo))]
+        [(= acao 1) (set! valores (media_movel microsoft periodo))]
+        [(= acao 2) (set! valores (media_movel petrobras periodo))])
+   (define periodos  (reverse (gera (length valores))))
+
+  (define f (new frame% [label "Gráfico de Média Movel Simples"]
+               [width 300]
+               [height 300]))
+  
+  (define c (new canvas% [parent f]
+               [paint-callback (lambda (c dc) 
+                                 (plot/dc (lines (map vector periodos valores)#:y-min 1000 #:y-max 1200 )
+                                          (send c get-dc)
+                                          0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
+  (send f show #t))
+        
+        
+
+(define (geraGraficoMME acao periodo)1)
+
+(define (geraGraficoRSI acao periodo)1)
 
 (send frame show #t)
