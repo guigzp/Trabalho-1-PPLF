@@ -132,7 +132,6 @@
   (cond [(empty? lst) empty]
         [else
          (define media_exponencial (+ (* k ( - (dados_acoes-close (first lst)) media_anterior)) media_anterior))
-         ;(define media_exponencial (+ (* k (dados_acoes-close (first lst))) (*(- 1 k) media_anterior)))
          (cons media_exponencial (media_movel_exponencial (rest lst) n media_exponencial))]))
 
 ; Avança lista
@@ -245,10 +244,6 @@
 (define msg (new message% [parent frame]
                  [label "Simulador de Ações"]))
 
-;(define acoes (new choice% [parent frame]
-          ;         [label "Ações"]
-             ;      [choices (list "Google" "Microsoft" "Petrobras")]))
-
 (define opcoes (new radio-box%
                    [parent frame]
                    [label "Opções: "]
@@ -257,6 +252,7 @@
                    [vert-margin 10]
                    [callback (lambda (control event)
                              (cond [(= 0 (send opcoes get-selection)) (send texto-periodo enable #f)]
+                                   [(= 4 (send opcoes get-selection)) (send texto-periodo enable #f)]
                                    [else (send texto-periodo enable #t)]))]))
 ;(send opcoes set-selection #f)
 
@@ -265,7 +261,6 @@
 (define msg-opcao-invalida (new message% [label "Opção Inválida!"] [parent frame-opcao-invalida]))
 
 (define botao-opcao-invalida (new button% [label "OK"] [parent frame-opcao-invalida]))
-
 
 (define acoes (new radio-box%
                    [parent frame]
@@ -289,57 +284,51 @@
                               (define opcao-escolhida (send opcoes get-selection))
                               (define acao-escolhida (send acoes get-selection))
                               (cond [(false? opcao-escolhida) (send frame-opcao-invalida show #t)]
-                                    [(= 0 opcao-escolhida) (geraGraficoPrecoAcoes acao-escolhida)]
-                                    [(= 1 opcao-escolhida) (geraGraficoMMS acao-escolhida (string->number (send texto-periodo get-value)))]
-                                    [(= 2 opcao-escolhida) (geraGraficoMME acao-escolhida (send texto-periodo get-number))]
-                                    [(= 3 opcao-escolhida) (geraGraficoRSI acao-escolhida (send texto-periodo get-number))]))]))
-                                    
+                                    [(= 0 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida 0)]
+                                    [(= 1 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
+                                    [(= 2 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
+                                    [(= 3 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))]
+                                    [(= 4 opcao-escolhida) (geraGrafico opcao-escolhida acao-escolhida 0)]))]))
 
-(define (geraGraficoPrecoAcoes numero)
+(define (geraGrafico opcao acao periodo)
   (define precos 0)
-  (define min 1000)
-  (define max 1176)
-  (cond [(= 0 numero) (set! precos (preco google)) ]
-        [(= 1 numero) (set! precos (preco microsoft)) (set! min 85) (set! max (argmax sqr precos))]
-        [(= 2 numero) (set! precos (preco petrobras)) (set! min 10) (set! max (argmax sqr precos))])
   
-  (define periodo  (reverse (gera (length precos))))
+  (cond [(= opcao 0)
+         (cond [(= 0 acao) (set! precos (preco google)) ]
+               [(= 1 acao) (set! precos (preco microsoft))]
+               [(= 2 acao) (set! precos (preco petrobras))])]
+        [(= opcao 1)
+         (cond [(= acao 0) (set! precos (media_movel google periodo))]
+               [(= acao 1) (set! precos (media_movel microsoft periodo))]
+               [(= acao 2) (set! precos (media_movel petrobras periodo))])]
+        [(= opcao 2)
+         (cond [(= acao 0) (set! precos (media_exponencial google periodo))]
+               [(= acao 1) (set! precos (media_exponencial microsoft periodo))]
+               [(= acao 2) (set! precos (media_exponencial petrobras periodo))])]
+        [(= opcao 3)
+         (cond [(= acao 0) (set! precos (rsi google periodo))]
+               [(= acao 1) (set! precos (rsi microsoft periodo))]
+               [(= acao 2) (set! precos (rsi petrobras periodo))])]
+        [(= opcao 4)
+         (cond [(= acao 0) (set! precos (macd google))]
+               [(= acao 1) (set! precos (macd microsoft))]
+               [(= acao 2) (set! precos (macd petrobras))])])
 
-  (define f (new frame% [label "Gráfico de Preços"]
+  (define  periodos (reverse (gera (length precos))))
+  (define min (argmin sqr precos))
+  (define max (argmax sqr precos))
+
+  (define frame-grafico (new frame% [label "Gráfico"]
                [width 300]
                [height 300]))
   
-  (define c (new canvas% [parent f]
+  (define c (new canvas% [parent frame-grafico]
                [paint-callback (lambda (c dc) 
-                                 (plot/dc (lines (map vector periodo precos)#:y-min min #:y-max max )
+                                 (plot/dc (lines (map vector periodos precos)#:y-min min #:y-max max )
                                           (send c get-dc)
                                           0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
-  (send f show #t))
 
+  (send frame-grafico show #t))
 
-(define (geraGraficoMMS acao periodo)
-  (define valores 0)
-  
-  (cond [(= acao 0) (set! valores (media_movel google periodo))]
-        [(= acao 1) (set! valores (media_movel microsoft periodo))]
-        [(= acao 2) (set! valores (media_movel petrobras periodo))])
-   (define periodos  (reverse (gera (length valores))))
-
-  (define f (new frame% [label "Gráfico de Média Movel Simples"]
-               [width 300]
-               [height 300]))
-  
-  (define c (new canvas% [parent f]
-               [paint-callback (lambda (c dc) 
-                                 (plot/dc (lines (map vector periodos valores)#:y-min 1000 #:y-max 1200 )
-                                          (send c get-dc)
-                                          0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
-  (send f show #t))
-        
-        
-
-(define (geraGraficoMME acao periodo)1)
-
-(define (geraGraficoRSI acao periodo)1)
-
+ 
 (send frame show #t)
