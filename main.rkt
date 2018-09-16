@@ -367,6 +367,41 @@
                           [horiz-margin 0]
                           [auto-resize #t]))
 
+(define compradas_google (new message% [label "Ações Google: 0"]
+                              [parent frame_compra_venda]
+                              [horiz-margin 0]
+                              [auto-resize #t]))
+
+(define compradas_microsoft (new message% [label "Ações Microsoft: 0"]
+                              [parent frame_compra_venda]
+                              [horiz-margin 0]
+                              [auto-resize #t]))
+
+(define compradas_petrobras (new message% [label "Ações Petrobras: 0"]
+                              [parent frame_compra_venda]
+                              [horiz-margin 0]
+                              [auto-resize #t]))
+
+(define total_gasto (new message% [label "Total Gasto: 0"]
+                              [parent frame_compra_venda]
+                              [horiz-margin 0]
+                              [auto-resize #t]))
+
+(define total_vendido (new message% [label "Total Vendido: 0"]
+                              [parent frame_compra_venda]
+                              [horiz-margin 0]
+                              [auto-resize #t]))
+
+(define acoes_opcoes (new radio-box%
+                   [parent frame_compra_venda]
+                   [label "Ação: "]
+                   [style (list 'horizontal)]
+                   [choices (list "Google" "Microsoft" "Petrobras")]))
+
+(define text_quantidade (new text-field%
+                   [parent frame_compra_venda]
+                   [label "Quantidade: "]))
+
 (define (atualiza nova_data)
   (send mensagem_data set-label nova_data)
   (send preco_google set-label (string-append "Preço Google: " (number->string (valor_acao_dia google nova_data))))
@@ -376,10 +411,79 @@
 
 (atualiza "02/01/2018")
 
+; String da forma "Ações aaaa: numero" -> numero
+; Retira somente o numero de uma string
+(define (pegar_valor_mensagem msg)
+  (string->number (first (string-split (second (string-split msg ":"))))))
+
+
+; Numero -> altera as labels das mensagens
+; Função para o callback do botao de comprar ação
+(define (comprar opcao)
+  (define qtd (string->number (send text_quantidade get-value)))
+  (define valor_g (valor_acao_dia google (send mensagem_data get-label)))
+  (define valor_p (valor_acao_dia petrobras (send mensagem_data get-label)))
+  (define valor_m (valor_acao_dia microsoft (send mensagem_data get-label)))
+  (define total_atual (pegar_valor_mensagem (send total_gasto get-label)))
+  (cond [(or (not (number? qtd)) (> 1 qtd)) (send frame-opcao-invalida show #t)]
+        [else (cond [(= 0 opcao) (send compradas_google set-label
+                                       (string-append "Ações Google: " (number->string (+ qtd (pegar_valor_mensagem (send compradas_google get-label))))))
+                                 (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_g) total_atual))))]
+                    
+                    [(= 1 opcao) (send compradas_microsoft set-label
+                                       (string-append "Ações Microsoft " (number->string (+ qtd (pegar_valor_mensagem (send compradas_microsoft get-label))))))
+                                 (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_m) total_atual))))]
+                    
+                    [(= 2 opcao) (send compradas_petrobras set-label
+                                       (string-append "Ações Petrobras " (number->string (+ qtd (pegar_valor_mensagem (send compradas_petrobras get-label))))))
+                                 (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_p) total_atual))))]
+                    )]))
+
+
+(define frame_final_simulacao (new frame% [label "Simulação Compra e Venda"]
+                                   [height 250 ]
+                                   [width 250]))
+
+(define mensagem_final_simulacao (new message% [label ""]
+                                      [parent frame_final_simulacao]
+                                      [auto-resize #t]))
+
+(define (vender_tudo)
+  (define qtd_g (*(pegar_valor_mensagem (send compradas_google get-label)) (valor_acao_dia google (send mensagem_data get-label))))
+  (define qtd_m (*(pegar_valor_mensagem (send compradas_microsoft get-label)) (valor_acao_dia microsoft (send mensagem_data get-label))))
+  (define qtd_p (*(pegar_valor_mensagem (send compradas_petrobras get-label)) (valor_acao_dia petrobras (send mensagem_data get-label))))
+  (+ qtd_g qtd_m qtd_p))
+
+(define (terminar)
+  (define gasto (pegar_valor_mensagem (send total_gasto get-label)))
+  (define vendido (+ (pegar_valor_mensagem (send total_vendido get-label)) (vender_tudo)))
+  (define final (- vendido gasto))
+  (cond [(< final 0) (send mensagem_final_simulacao set-label (string-append "Você teve prejuízo de: " (number->string (abs final))))]
+        [else (send mensagem_final_simulacao set-label (string-append "Você teve lucro de: " (number->string (abs final))))])
+  (send frame_final_simulacao show #t))
+
+(define (vender opcao)
+  (
+
+
 (define botao_proximo (new button% [label "Encerrar o dia"]
                            [parent frame_compra_venda]
                            [callback (lambda (button event)
                                        (atualiza (posterior_data_valida (send mensagem_data get-label))))]))
 
+(define botao_comprar (new button% [label "Comprar"]
+                           [parent frame_compra_venda]
+                           [callback (lambda (button event)
+                                       (comprar (send acoes_opcoes get-selection)))]))
+
+(define botao_vender (new button% [label "Vender"]
+                          [parent frame_compra_venda]
+                          [callback (lambda (button event)
+                                      (vender (send acoes_opcoes get-selection)))]))
+
+(define botao_terminar (new button% [label "Terminar Simulação"]
+                           [parent frame_compra_venda]
+                           [callback (lambda (button event)
+                                       (terminar))]))
 
 (send frame_compra_venda show #t)
