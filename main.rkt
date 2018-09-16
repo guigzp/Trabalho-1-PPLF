@@ -97,9 +97,6 @@
   (define x (inverte_acoes lst))
     (inverte_acoes (sort x string<? #:key dados_acoes-date)))
 
-;(define (ordena_data lst)
-;   (sort lst string<? #:key dados_acoes-date))
-
 ; Lista de dados_acoes, Numero -> Numero
 ; Devolve a soma dos Numero primeiro termos da lista
 (define (soma_qtd acao qtd)
@@ -187,6 +184,8 @@
 ; Estrutura de lista que armazena todas as dastas válidas
 (define datas (gera_datas google))
 
+; lista de strings -> lista de strings
+; Recebe a lista de datas e retorna a mesma mas com no formato ANO/MES/DIA
 (define (inverte_datas lista_datas)
   (cond [(empty? lista_datas) empty]
         [else (cons (inverte (first lista_datas)) (inverte_datas (rest lista_datas)))]))
@@ -201,17 +200,25 @@
                [else  (first (rest lista_datas))])]
         [else (proxima_data (rest lista_datas ) data opcao)]))
 
-; Chama a proxima_data
-(define (proxima_data_valida data)
+; String -> String
+; Chama a anterior data para calcular a data posterior da passada e a devolve
+(define (posterior_data_valida data)
   (define nova_data (proxima_data (inverte_datas datas) (inverte data)  string<?))
   (cond [(empty? nova_data) "Não existe uma data proxima válida!"]
         [else (inverte nova_data)]))
 
-; Chama a anterior data
+; String -> String
+; Chama a anterior data para calcular a data anterior da passada e a devolve
 (define (anterior_data_valida data)
   (define nova_data (proxima_data (reverse (inverte_datas datas)) (inverte data)  string>?) )
   (cond [(empty? nova_data) "Não existe uma data anterior válida!"]
         [else (inverte nova_data)]))
+
+; Lista de acoes, String -> Numero
+; Devolve o valor de fechemato da ação no dia passado
+(define (valor_acao_dia acao data)
+  (cond [(equal? data (dados_acoes-date (first acao))) (dados_acoes-close (first acao))]
+        [else (valor_acao_dia (rest acao) data)]))
         
 (define ordenacao-tests
   (test-suite "Testes Ordenacao"
@@ -229,22 +236,17 @@
 (run-tests (test-suite "Todos os testes" testes))
 (void))
 
-(define ys (macd google ))
+; Numero -> Lista de numeros
+; Gera uma lista de numeros de 1 até o valor passado
 (define (gera valor)
   (cond [(= valor 0) empty]
         [else (cons valor (gera (sub1 valor)))]))
-(define xs (reverse (gera (length ys))))
 
+; lista de acoes -> lista de numeros
+; Constroi uma lista somente com os valores de fechamento da ação passada
 (define (preco acao)
   (cond [(empty? acao) empty]
         [else (cons (dados_acoes-close (first acao)) (preco (rest acao)))]))
-
-(define x (preco google))
-(define y (reverse (gera (length x))))
-
-;(plot (discrete-histogram (map vector xs ys) #:color 'red #:gap 0.5) #:width 2000 #:y-max 15)
-;(plot (lines (map vector xs ys)) #:out-file "teste.png" #:out-kind 'png)
-;(plot (lines (map vector y x)#:y-min 1000) )
 
 (define frame (new frame% [label "Simulador de Ações"]))
 
@@ -345,7 +347,7 @@
                                 [width 500]
                                 [height 500]))
 
-(define data (new message% [label "" ]
+(define mensagem_data (new message% [label "" ]
                           [parent frame_compra_venda]
                           [horiz-margin 0]
                           [auto-resize #t]))
@@ -366,16 +368,18 @@
                           [auto-resize #t]))
 
 (define (atualiza nova_data)
-  (send data set-label nova_data)
-  (send preco_google set-label (string-append "Preço Google: " (number->string (dados_acoes-close (first google)))))
-  (send preco_microsoft set-label (string-append "Preço Microsoft: " (number->string (dados_acoes-close (first microsoft)))))
-  (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (dados_acoes-close (first petrobras)))))
+  (send mensagem_data set-label nova_data)
+  (send preco_google set-label (string-append "Preço Google: " (number->string (valor_acao_dia google nova_data))))
+  (send preco_microsoft set-label (string-append "Preço Microsoft: " (number->string (valor_acao_dia microsoft nova_data))))
+  (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (valor_acao_dia petrobras nova_data))))
   )
+
+(atualiza "02/01/2018")
 
 (define botao_proximo (new button% [label "Encerrar o dia"]
                            [parent frame_compra_venda]
                            [callback (lambda (button event)
-                                       (atualiza "21/05/10" ))]))
+                                       (atualiza (posterior_data_valida (send mensagem_data get-label))))]))
 
 
-;(send frame_compra_venda show #t)
+(send frame_compra_venda show #t)
