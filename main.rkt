@@ -431,11 +431,11 @@
                                  (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_g) total_atual))))]
                     
                     [(= 1 opcao) (send compradas_microsoft set-label
-                                       (string-append "Ações Microsoft " (number->string (+ qtd (pegar_valor_mensagem (send compradas_microsoft get-label))))))
+                                       (string-append "Ações Microsoft: " (number->string (+ qtd (pegar_valor_mensagem (send compradas_microsoft get-label))))))
                                  (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_m) total_atual))))]
                     
                     [(= 2 opcao) (send compradas_petrobras set-label
-                                       (string-append "Ações Petrobras " (number->string (+ qtd (pegar_valor_mensagem (send compradas_petrobras get-label))))))
+                                       (string-append "Ações Petrobras: " (number->string (+ qtd (pegar_valor_mensagem (send compradas_petrobras get-label))))))
                                  (send total_gasto set-label (string-append "Total Gasto: " (number->string (+ (* qtd valor_p) total_atual))))]
                     )]))
 
@@ -463,8 +463,31 @@
   (send frame_final_simulacao show #t))
 
 (define (vender opcao)
-  (
-
+  (define qtd (string->number (send text_quantidade get-value)))
+  (define disponivel_google (pegar_valor_mensagem (send compradas_google get-label)))
+  (define disponivel_petrobras (pegar_valor_mensagem (send compradas_petrobras get-label)))
+  (define disponivel_microsoft (pegar_valor_mensagem (send compradas_microsoft get-label)))
+  (define vendido (pegar_valor_mensagem (send total_vendido get-label)))
+  (cond [(or (not (number? qtd)) (> 1 qtd)) (send frame-opcao-invalida show #t)]
+        [else (cond [(= 0 opcao)
+                     (cond [(< disponivel_google qtd) (send frame-opcao-invalida show #t)]
+                           [else (send compradas_google set-label (string-append "Ações Google: " (number->string (- disponivel_google qtd))))
+                                 (send total_vendido set-label (string-append "Total Vendido: "
+                                                                              (number->string (+ vendido (* qtd (valor_acao_dia google
+                                                                                                                                (send mensagem_data get-label)))))))])]
+                    [(= 1 opcao)
+                     (cond [(< disponivel_microsoft qtd) (send frame-opcao-invalida show #t)]
+                           [else (send compradas_microsoft set-label (string-append "Ações Microsoft: " (number->string (- disponivel_microsoft qtd))))
+                                 (send total_vendido set-label (string-append "Total Vendido: "
+                                                                              (number->string (+ vendido (* qtd (valor_acao_dia microsoft
+                                                                                                                                (send mensagem_data get-label)))))))])]           
+                    [(= 2 opcao)
+                     (cond [(< disponivel_petrobras qtd) (send frame-opcao-invalida show #t)]
+                           [else (send compradas_petrobras set-label (string-append "Ações Petrobras: " (number->string (- disponivel_petrobras qtd))))
+                                 (send total_vendido set-label (string-append "Total Vendido: "
+                                                                              (number->string (+ vendido (* qtd (valor_acao_dia petrobras
+                                                                                                                                (send mensagem_data get-label)))))))])]
+                    )]))
 
 (define botao_proximo (new button% [label "Encerrar o dia"]
                            [parent frame_compra_venda]
