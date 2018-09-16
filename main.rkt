@@ -19,17 +19,6 @@
 ; Le o .csv para arquivo
 (define arquivo (ler_arquivo "dados.csv"))
 
-; Lista -> Lista
-; Função para arrumar os dados gerados na leitura do .csv, como na leitura cada linha é uma lista de 1 elemento, sendo esse elemento uma String,
-; é necessário separar cada um dos dados desta string, portanto, a função transforma utiliza a função separa para transformar cada lista de string
-; em uma lista de várias strings sem os ; separadores.
-(define (transforma lst)
-  (cond [(empty? lst) empty]
-        [else (cons (separa (first (first lst))) (transforma (rest lst)))]))
-
-; Empresas é a constante que armazena os dados do arquivo .csv formatado, é uma lista de listas de strings.
-(define empresas (transforma arquivo))
-
 ; Define a estrutura dos dados das ações
 (struct dados_acoes (nome date close) #:transparent)
 
@@ -185,26 +174,44 @@
          (define valor (- 100 (/ 100(+ 1 (forca_relativa original quantidade)))))
          (cons valor (calculo_rsi (rest acao) (rest original) quantidade))]))
 
+; Chama o cálculo do RSI
 (define (rsi acao quantidade)
   (calculo_rsi (avanca_lista acao quantidade) acao quantidade))
+
+; Lista de dacos_acoes -> Lista de Strings
+; Gera uma lista com todas as datas válidas
+(define (gera_datas acao)
+  (cond [(empty? acao) empty]
+        [else (cons (dados_acoes-date (first acao)) (gera_datas (rest acao)))]))
+
+; Estrutura de lista que armazena todas as dastas válidas
+(define datas (gera_datas google))
+
+(define (inverte_datas lista_datas)
+  (cond [(empty? lista_datas) empty]
+        [else (cons (inverte (first lista_datas)) (inverte_datas (rest lista_datas)))]))
                               
 ; String, dados_acao -> String
 ; Devolve a proxima data válida
-(define (proxima_data acao data opcao)
-  (cond [(empty? acao) "Não existe data válida no banco de dados."]
-        [(opcao data (dados_acoes-date (first acao))) (dados_acoes-date (first acao))]
-        [(string=? data (dados_acoes-date (first acao)))
-         (cond [(empty? (rest acao)) "Não existe data válida no banco de dados."]
-               [else (dados_acoes-date (first (rest acao)))])]
-        [else (proxima_data (rest acao ) data opcao)]))
+(define (proxima_data lista_datas data opcao)
+  (cond [(empty? lista_datas) empty]
+        [(opcao data  (first lista_datas)) (first lista_datas)]
+        [(string=? data  (first lista_datas))
+         (cond [(empty? (rest lista_datas)) empty]
+               [else  (first (rest lista_datas))])]
+        [else (proxima_data (rest lista_datas ) data opcao)]))
 
 ; Chama a proxima_data
-(define (proxima_data_valida acao data)
-  (inverte (proxima_data (inverte_acoes acao) (inverte data)  string<?) ))
+(define (proxima_data_valida data)
+  (define nova_data (proxima_data (inverte_datas datas) (inverte data)  string<?))
+  (cond [(empty? nova_data) "Não existe uma data proxima válida!"]
+        [else (inverte nova_data)]))
 
 ; Chama a anterior data
-(define (anterior_data_valida acao data)
-  (inverte (proxima_data (reverse (inverte_acoes acao)) (inverte data)  string>?) ))
+(define (anterior_data_valida data)
+  (define nova_data (proxima_data (reverse (inverte_datas datas)) (inverte data)  string>?) )
+  (cond [(empty? nova_data) "Não existe uma data anterior válida!"]
+        [else (inverte nova_data)]))
         
 (define ordenacao-tests
   (test-suite "Testes Ordenacao"
@@ -332,4 +339,43 @@
   (send frame-grafico show #t))
 
  
-(send frame show #t)
+(send frame show #f)
+
+(define frame_compra_venda (new frame% [label "Simulador de Compra e Venda"]
+                                [width 500]
+                                [height 500]))
+
+(define data (new message% [label "" ]
+                          [parent frame_compra_venda]
+                          [horiz-margin 0]
+                          [auto-resize #t]))
+
+(define preco_google (new message% [label "" ]
+                          [parent frame_compra_venda]
+                          [horiz-margin 0]
+                          [auto-resize #t]))
+
+(define preco_petrobras (new message% [label "" ]
+                          [parent frame_compra_venda]
+                          [horiz-margin 0]
+                          [auto-resize #t]))
+
+(define preco_microsoft (new message% [label "" ]
+                          [parent frame_compra_venda]
+                          [horiz-margin 0]
+                          [auto-resize #t]))
+
+(define (atualiza nova_data)
+  (send data set-label nova_data)
+  (send preco_google set-label (string-append "Preço Google: " (number->string (dados_acoes-close (first google)))))
+  (send preco_microsoft set-label (string-append "Preço Microsoft: " (number->string (dados_acoes-close (first microsoft)))))
+  (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (dados_acoes-close (first petrobras)))))
+  )
+
+(define botao_proximo (new button% [label "Encerrar o dia"]
+                           [parent frame_compra_venda]
+                           [callback (lambda (button event)
+                                       (atualiza "21/05/10" ))]))
+
+
+;(send frame_compra_venda show #t)
