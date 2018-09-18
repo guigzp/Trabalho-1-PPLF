@@ -341,7 +341,7 @@
   (send frame-grafico show #t))
 
  
-(send frame show #f)
+(send frame show #t)
 
 (define frame_compra_venda (new frame% [label "Simulador de Compra e Venda"]
                                 [width 500]
@@ -403,11 +403,13 @@
                    [label "Quantidade: "]))
 
 (define (atualiza nova_data)
-  (send mensagem_data set-label nova_data)
-  (send preco_google set-label (string-append "Preço Google: " (number->string (valor_acao_dia google nova_data))))
-  (send preco_microsoft set-label (string-append "Preço Microsoft: " (number->string (valor_acao_dia microsoft nova_data))))
-  (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (valor_acao_dia petrobras nova_data))))
-  )
+  (cond [(empty? nova_data) (terminar)]
+        [else
+         (send mensagem_data set-label nova_data)
+         (send preco_google set-label (string-append "Preço Google: " (number->string (valor_acao_dia google nova_data))))
+         (send preco_microsoft set-label (string-append "Preço Microsoft: " (number->string (valor_acao_dia microsoft nova_data))))
+         (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (valor_acao_dia petrobras nova_data))))
+         ]))
 
 (atualiza "02/01/2018")
 
@@ -462,6 +464,8 @@
         [else (send mensagem_final_simulacao set-label (string-append "Você teve lucro de: " (number->string (abs final))))])
   (send frame_final_simulacao show #t))
 
+
+; Callback botão vender
 (define (vender opcao)
   (define qtd (string->number (send text_quantidade get-value)))
   (define disponivel_google (pegar_valor_mensagem (send compradas_google get-label)))
@@ -509,4 +513,6 @@
                            [callback (lambda (button event)
                                        (terminar))]))
 
-(send frame_compra_venda show #t)
+(define menu (new menu-bar% (parent frame)))
+
+;(send frame_compra_venda show #t)
