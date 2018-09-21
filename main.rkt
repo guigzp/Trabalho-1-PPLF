@@ -232,9 +232,46 @@
               (check-equal? (correlacao google petrobras) -0.07983751056172986)
               (check-equal? (correlacao microsoft petrobras) 0.6372067611546479)))
 
+(define data-tests
+  (test-suite "Testes Data"
+              (check-equal? (posterior_data_valida "02/01/2018") "03/01/2018")
+              (check-equal? (posterior_data_valida "30/04/2018") "01/05/2018")
+              (check-equal? (anterior_data_valida "03/01/2018") "02/01/2018")
+              (check-equal? (anterior_data_valida "01/05/2018") "30/04/2018")))
+
+(define media_movel-tests
+  (test-suite "Teste Media Movel Simples"
+              (check-equal? (first (media_movel google 10)) 1100.145996)
+              (check-equal? (first (media_movel microsoft 10)) 87.79499960000001)
+              (check-equal? (first (media_movel petrobras 10)) 11.171000000000001)))
+
+(define media_movel_exponencial-tests
+  (test-suite "Teste Media Movel Exponencial"
+              (check-equal? (first (media_exponencial google 14)) 1111.1821462857145)
+              (check-equal? (first (media_exponencial microsoft 14)) 88.55714242857142)
+              (check-equal? (first (media_exponencial petrobras 14)) 11.454999999999998)))
+
+(define rsi-tests
+  (test-suite "Teste RSI"
+              (check-equal? (first (rsi google 14)) 93.30480987894174)
+              (check-equal? (first (rsi microsoft 14)) 80.23506410256401)
+              (check-equal? (first (rsi petrobras 14)) 91.00529100529101)))
+
+(define macd-tests
+  (test-suite "Teste MACD"
+              (check-equal? (first (macd google)) -18.221595237179372)
+              (check-equal? (first (macd microsoft)) -2.069808198717922)
+              (check-equal? (first (macd petrobras)) -0.9373076923076944)))
+
+; Função para executar os testes
 (define (executa-testes . testes)
 (run-tests (test-suite "Todos os testes" testes))
 (void))
+
+
+; Função para chamar todos os testes
+(define (executa_todos_testes)
+  (executa-testes correlacao-tests data-tests ordenacao-tests media_movel-tests media_movel_exponencial-tests macd-tests rsi-tests))
 
 ; Numero -> Lista de numeros
 ; Gera uma lista de numeros de 1 até o valor passado
@@ -248,10 +285,10 @@
   (cond [(empty? acao) empty]
         [else (cons (dados_acoes-close (first acao)) (preco (rest acao)))]))
 
-(define frame_gera_grafico (new frame% [label "Simulador de Ações"]))
+(define frame_gera_grafico (new frame% [label "Gráficos das Ações"]))
 
 (define msg (new message% [parent frame_gera_grafico]
-                 [label "Simulador de Ações"]))
+                 [label "Gráficos das Ações"]))
 
 (define opcoes (new radio-box%
                    [parent frame_gera_grafico]
@@ -263,7 +300,6 @@
                              (cond [(= 0 (send opcoes get-selection)) (send texto-periodo enable #f)]
                                    [(= 4 (send opcoes get-selection)) (send texto-periodo enable #f)]
                                    [else (send texto-periodo enable #t)]))]))
-;(send opcoes set-selection #f)
 
 (define frame-opcao-invalida (new frame% [label "Erro"][width 100] [height 100]))
 
@@ -295,11 +331,13 @@
                               (define acao-escolhida (send acoes get-selection))
                               (cond 
                                     [(or (= 1 opcao-escolhida) (= 2 opcao-escolhida) (= 3 opcao-escolhida))
-                                     (cond [(false? (send texto-periodo get-value))
+                                     (cond [(equal? "" (send texto-periodo get-value))
                                             (send frame-opcao-invalida show #t)]
                                            [else (geraGrafico opcao-escolhida acao-escolhida (string->number (send texto-periodo get-value)))])]
                                     [else (geraGrafico opcao-escolhida acao-escolhida 0)]))]))
 
+
+; Função para plotar o gráfico para um frame de acordo com a opção e o período passado
 (define (geraGrafico opcao acao periodo)
   (define precos 0)
   
@@ -329,19 +367,16 @@
   (define max (argmax sqr precos))
 
   (define frame-grafico (new frame% [label "Gráfico"]
-               [width 300]
-               [height 300]))
+               [width 600]
+               [height 600]))
   
   (define c (new canvas% [parent frame-grafico]
                [paint-callback (lambda (c dc) 
                                  (plot/dc (lines (map vector periodos precos)#:y-min min #:y-max max )
                                           (send c get-dc)
-                                          0 0 260 260 #:x-label "Período" #:y-label "Preço"))]))
+                                          0 0 500 500 #:x-label "Período" #:y-label "Preço"))]))
 
   (send frame-grafico show #t))
-
- 
-;(send frame show #t)
 
 (define frame_compra_venda (new frame% [label "Simulador de Compra e Venda"]
                                 [width 500]
@@ -402,6 +437,7 @@
                    [parent frame_compra_venda]
                    [label "Quantidade: "]))
 
+; Atualiza o frame conforme a data passada
 (define (atualiza nova_data)
   (cond [(empty? nova_data) (terminar)]
         [else
@@ -411,15 +447,12 @@
          (send preco_petrobras set-label (string-append "Preço Petrobras: " (number->string (valor_acao_dia petrobras nova_data))))
          ]))
 
-(atualiza "02/01/2018")
-(atualiza "30/05/2018")
-
 ; String da forma "Ações aaaa: numero" -> numero
 ; Retira somente o numero de uma string
 (define (pegar_valor_mensagem msg)
   (string->number (first (string-split (second (string-split msg ":"))))))
 
-; Reinicia Simulação Compra e Venda
+; Reinicia Simulação Compra e Venda para o primeiro dia
 (define (reinicia)
   (atualiza "02/01/2018")
   (send total_gasto set-label "Total Gasto: 0")
@@ -453,20 +486,26 @@
                     )]))
 
 
-(define frame_final_simulacao (new frame% [label "Simulação Compra e Venda"]
-                                   [height 250 ]
-                                   [width 250]))
+(define frame_final_simulacao (new frame% [label "Simulação Compra e Venda"]))
 
 (define mensagem_final_simulacao (new message% [label ""]
                                       [parent frame_final_simulacao]
                                       [auto-resize #t]))
 
+(define botao_nova_simulacao (new button% [label "Nova Simulação"]
+                                  [parent frame_final_simulacao]
+                                  [callback (lambda (button event)
+                                              (send frame_final_simulacao show #f)
+                                              (send frame_pede_periodo show #t))]))
+
+; Função para pegar todas as ações compradas e vender todas
 (define (vender_tudo)
   (define qtd_g (*(pegar_valor_mensagem (send compradas_google get-label)) (valor_acao_dia google (send mensagem_data get-label))))
   (define qtd_m (*(pegar_valor_mensagem (send compradas_microsoft get-label)) (valor_acao_dia microsoft (send mensagem_data get-label))))
   (define qtd_p (*(pegar_valor_mensagem (send compradas_petrobras get-label)) (valor_acao_dia petrobras (send mensagem_data get-label))))
   (+ qtd_g qtd_m qtd_p))
 
+; Termina a simulação calculando o lucro ou prejuízo e reiniciando a simulação para o dia 1
 (define (terminar)
   (define gasto (pegar_valor_mensagem (send total_gasto get-label)))
   (define vendido (+ (pegar_valor_mensagem (send total_vendido get-label)) (vender_tudo)))
@@ -474,6 +513,7 @@
   (cond [(< final 0) (send mensagem_final_simulacao set-label (string-append "Você teve prejuízo de: " (number->string (abs final))))]
         [else (send mensagem_final_simulacao set-label (string-append "Você teve lucro de: " (number->string (abs final))))])
   (reinicia)
+  (send frame_compra_venda show #f)
   (send frame_final_simulacao show #t))
 
 
@@ -525,10 +565,6 @@
                            [callback (lambda (button event)
                                        (terminar))]))
 
-(define menu (new menu-bar% (parent frame_gera_grafico)))
-
-
-
 (define frame_principal (new frame%
                              [label "Trabalho PPLF - Guilherme"]
                              [width 300]
@@ -553,6 +589,8 @@
 
 (define frame_pede_periodo (new frame%
                                 [label "Período da Simulação"]
+                                [height 50]
+                                [width 50]
                                 ))
 
 (define pede_periodo (new message%
@@ -569,7 +607,8 @@
                                     [parent frame_pede_periodo]
                                     [callback (lambda (button event)
                                                 (define data_digitada (send pede_data get-value))
-                                                 (cond [(number? (index-of datas data_digitada)) (atualiza data_digitada)]
+                                                 (cond [(not (number? data_digitada)) (atualiza "02/01/2018")]
+                                                       [(number? (index-of datas data_digitada)) (atualiza data_digitada)]
                                                        [(not (empty? (anterior_data_valida data_digitada))) (atualiza (anterior_data_valida data_digitada))]
                                                        [(not (empty? (posterior_data_valida data_digitada))) (atualiza (posterior_data_valida data_digitada))])
                                                 (send frame_pede_periodo show #f)
