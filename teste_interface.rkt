@@ -9,43 +9,54 @@
 (define msg (new message% [parent frame]
                  [label "Simulador de Ações"]))
 
-(define panel (new horizontal-pane%
-                   [parent frame]
+(define painel-principal (new panel% [parent frame]
+                              [min-width 300]
+                              [min-height 300]))
+
+(define panel (new horizontal-panel%
+                   [parent painel-principal]
                    [vert-margin 10]
-                   [horiz-margin 10]
-                   [alignment '(left bottom)]
-                   [stretchable-width #t]
-                   [stretchable-height #t]))
+                   [horiz-margin 0]
+                   [alignment '(center top)]
+                   [stretchable-width #f]
+                   [stretchable-height #f]))
+
+(define panel2 (new horizontal-panel%
+                   [parent painel-principal]
+                   [vert-margin 0]
+                   [horiz-margin 0]
+                   [alignment '(center top)]
+                   [stretchable-width #f]
+                   [stretchable-height #f]))
 
 (define acoes (new radio-box%
                    [parent panel]
                    [label "Opções"]
                    [choices (list "Preços" "MMS" "MME" "RSI" "MACD")]
                    [style (list 'horizontal)]
-                   [vert-margin 10]
+                   [vert-margin 0]
                    [callback (lambda (control event)
                              (cond [(= 0 (send acoes get-selection)) (send acoes2 enable #t)]
                                    [else (send acoes2 enable #f)]))]))
-(send acoes set-selection #f)
 
 
 (define acoes2 (new radio-box%
-                   [parent panel]
+                   [parent panel2]
                    [label "Ações"]
                    [enabled #f]
-                   [vert-margin 30]
+                   [vert-margin 0]
+                   [horiz-margin 0]
                    [style (list 'horizontal)]
                    [choices (list "Microsoft" "Google" "Petrobras")]))
 
-(send acoes2 set-selection #f)
 
 (define botao (new button%
-                   [parent panel]
+                   [parent frame]
                    [label "Gerar"]
                    [callback (lambda (button event)
                                (display (send acoes get-selection)))]))
 
-(send frame show #f)
+(send frame show #t)
 
 (define num 1)
 
@@ -60,4 +71,4 @@
            0 0 260 260 ))]))
 
 
-(send f show #t)
+(send f show #f)

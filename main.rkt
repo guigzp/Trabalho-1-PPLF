@@ -204,14 +204,14 @@
 ; Chama a anterior data para calcular a data posterior da passada e a devolve
 (define (posterior_data_valida data)
   (define nova_data (proxima_data (inverte_datas datas) (inverte data)  string<?))
-  (cond [(empty? nova_data) "Não existe uma data proxima válida!"]
+  (cond [(empty? nova_data) empty]
         [else (inverte nova_data)]))
 
 ; String -> String
 ; Chama a anterior data para calcular a data anterior da passada e a devolve
 (define (anterior_data_valida data)
   (define nova_data (proxima_data (reverse (inverte_datas datas)) (inverte data)  string>?) )
-  (cond [(empty? nova_data) "Não existe uma data anterior válida!"]
+  (cond [(empty? nova_data) empty]
         [else (inverte nova_data)]))
 
 ; Lista de acoes, String -> Numero
@@ -248,13 +248,13 @@
   (cond [(empty? acao) empty]
         [else (cons (dados_acoes-close (first acao)) (preco (rest acao)))]))
 
-(define frame (new frame% [label "Simulador de Ações"]))
+(define frame_gera_grafico (new frame% [label "Simulador de Ações"]))
 
-(define msg (new message% [parent frame]
+(define msg (new message% [parent frame_gera_grafico]
                  [label "Simulador de Ações"]))
 
 (define opcoes (new radio-box%
-                   [parent frame]
+                   [parent frame_gera_grafico]
                    [label "Opções: "]
                    [choices (list "Preços" "MMS" "MME" "RSI" "MACD")]
                    [style (list 'horizontal)]
@@ -273,20 +273,20 @@
                                   [callback (lambda (button event) (send frame-opcao-invalida show #f))]))
 
 (define acoes (new radio-box%
-                   [parent frame]
+                   [parent frame_gera_grafico]
                    [label "Ação: "]
                    [vert-margin 30]
                    [style (list 'horizontal)]
                    [choices (list "Google" "Microsoft" "Petrobras")]))
 
 (define texto-periodo (new text-field%
-                   [parent frame]
+                   [parent frame_gera_grafico]
                    [label "Período"]
                    [enabled #f]
                    [vert-margin 30]))
 
 (define botao (new button%
-                  [parent frame]
+                  [parent frame_gera_grafico]
                   [label "Gerar"]
                   [vert-margin 10]
                   [horiz-margin 10]
@@ -341,7 +341,7 @@
   (send frame-grafico show #t))
 
  
-(send frame show #t)
+;(send frame show #t)
 
 (define frame_compra_venda (new frame% [label "Simulador de Compra e Venda"]
                                 [width 500]
@@ -412,11 +412,22 @@
          ]))
 
 (atualiza "02/01/2018")
+(atualiza "30/05/2018")
 
 ; String da forma "Ações aaaa: numero" -> numero
 ; Retira somente o numero de uma string
 (define (pegar_valor_mensagem msg)
   (string->number (first (string-split (second (string-split msg ":"))))))
+
+; Reinicia Simulação Compra e Venda
+(define (reinicia)
+  (atualiza "02/01/2018")
+  (send total_gasto set-label "Total Gasto: 0")
+  (send total_vendido set-label "Total Vendido: 0")
+  (send compradas_google set-label "Ações Google: 0")
+  (send compradas_microsoft set-label "Ações Microsoft: 0")
+  (send compradas_petrobras set-label "Ações Petrobras: 0")
+  )
 
 
 ; Numero -> altera as labels das mensagens
@@ -462,6 +473,7 @@
   (define final (- vendido gasto))
   (cond [(< final 0) (send mensagem_final_simulacao set-label (string-append "Você teve prejuízo de: " (number->string (abs final))))]
         [else (send mensagem_final_simulacao set-label (string-append "Você teve lucro de: " (number->string (abs final))))])
+  (reinicia)
   (send frame_final_simulacao show #t))
 
 
@@ -513,6 +525,54 @@
                            [callback (lambda (button event)
                                        (terminar))]))
 
-(define menu (new menu-bar% (parent frame)))
+(define menu (new menu-bar% (parent frame_gera_grafico)))
 
-;(send frame_compra_venda show #t)
+
+
+(define frame_principal (new frame%
+                             [label "Trabalho PPLF - Guilherme"]
+                             [width 300]
+                             [height 300]))
+
+(define painel (new horizontal-panel%
+                    [parent frame_principal]))
+
+(define botao_graficos (new button%
+                            [label "Gerar Gráficos"]
+                            [horiz-margin 0]
+                            [parent painel]
+                            [callback (lambda (button event)
+                                        (send frame_gera_grafico show #t))]))
+
+(define botao_simulacao (new button%
+                            [label "Iniciar Simulações"]
+                            [horiz-margin 0]
+                            [parent painel]
+                            [callback (lambda (button event)
+                                        (send frame_pede_periodo show #t))]))
+
+(define frame_pede_periodo (new frame%
+                                [label "Período da Simulação"]
+                                ))
+
+(define pede_periodo (new message%
+                          [parent frame_pede_periodo]
+                          [label "Digite uma data (DD/MM/AAAA) para iniciar a simulação ou deixe em branco para iniciar do começo"]
+                          ))
+
+(define pede_data (new text-field%
+                       [parent frame_pede_periodo]
+                       [label "Data: "]))
+
+(define botao_inicia_simulacao (new button%
+                                    [label "Iniciar"]
+                                    [parent frame_pede_periodo]
+                                    [callback (lambda (button event)
+                                                (define data_digitada (send pede_data get-value))
+                                                 (cond [(number? (index-of datas data_digitada)) (atualiza data_digitada)]
+                                                       [(not (empty? (anterior_data_valida data_digitada))) (atualiza (anterior_data_valida data_digitada))]
+                                                       [(not (empty? (posterior_data_valida data_digitada))) (atualiza (posterior_data_valida data_digitada))])
+                                                (send frame_pede_periodo show #f)
+                                                (send frame_compra_venda show #t))]))
+
+(send frame_principal show #t)
