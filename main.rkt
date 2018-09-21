@@ -570,23 +570,6 @@
                              [width 300]
                              [height 300]))
 
-(define painel (new horizontal-panel%
-                    [parent frame_principal]))
-
-(define botao_graficos (new button%
-                            [label "Gerar Gráficos"]
-                            [horiz-margin 0]
-                            [parent painel]
-                            [callback (lambda (button event)
-                                        (send frame_gera_grafico show #t))]))
-
-(define botao_simulacao (new button%
-                            [label "Iniciar Simulações"]
-                            [horiz-margin 0]
-                            [parent painel]
-                            [callback (lambda (button event)
-                                        (send frame_pede_periodo show #t))]))
-
 (define frame_pede_periodo (new frame%
                                 [label "Período da Simulação"]
                                 [height 50]
@@ -613,5 +596,39 @@
                                                        [(not (empty? (posterior_data_valida data_digitada))) (atualiza (posterior_data_valida data_digitada))])
                                                 (send frame_pede_periodo show #f)
                                                 (send frame_compra_venda show #t))]))
+
+(define painel_precos_google (new horizontal-panel%
+                                  [parent frame_principal]
+                                  [alignment '(left top)]))
+
+(define canvas_precos_google (new editor-canvas%
+                                  [parent painel_precos_google]
+                                  [style '(transparent)]
+                                 ))
+
+(define texto_precos (new text%))
+
+(define (cria_data_valores lst string)
+  (cond [(empty? lst) string]
+        [else (set! string (string-append string "Data: " (dados_acoes-date (first lst)) " Fechamento: " (number->string (dados_acoes-close (first lst))) "\n"))
+              (cria_data_valores (rest lst) string) ]))
+
+(send texto_precos insert (cria_data_valores google ""))
+
+(send canvas_precos_google set-editor texto_precos)
+
+(define botao_graficos (new button%
+                            [label "Gerar Gráficos"]
+                            [horiz-margin 0]
+                            [parent frame_principal]
+                            [callback (lambda (button event)
+                                        (send frame_gera_grafico show #t))]))
+
+(define botao_simulacao (new button%
+                            [label "Iniciar Simulações"]
+                            [horiz-margin 0]
+                            [parent frame_principal]
+                            [callback (lambda (button event)
+                                        (send frame_pede_periodo show #t))]))
 
 (send frame_principal show #t)
