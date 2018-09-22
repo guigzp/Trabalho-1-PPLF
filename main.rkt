@@ -285,6 +285,12 @@
   (cond [(empty? acao) empty]
         [else (cons (dados_acoes-close (first acao)) (preco (rest acao)))]))
 
+; Menor ou maior valor em uma lista
+(define (menor_maior_lista opcao lst valor)
+  (cond  [(empty? lst) valor]
+         [(opcao valor (first lst))(menor_maior_lista opcao (rest lst) valor) ]
+         [else (menor_maior_lista opcao (rest lst) (first lst)) ]))
+
 (define frame_gera_grafico (new frame% [label "Gráficos das Ações"]))
 
 (define msg (new message% [parent frame_gera_grafico]
@@ -363,8 +369,8 @@
                [(= acao 2) (set! precos (macd petrobras))])])
 
   (define  periodos (reverse (gera (length precos))))
-  (define min (argmin sqr precos))
-  (define max (argmax sqr precos))
+  (define min (menor_maior_lista < precos 999999999))
+  (define max (menor_maior_lista > precos ( - 999999999)))
 
   (define frame-grafico (new frame% [label "Gráfico"]
                [width 600]
