@@ -632,7 +632,7 @@
 (define texto_precos_microsoft (new text%))
 
 (define mensagem3 (new message% [parent frame_principal]
-                       [label "Petrobras"]))
+                       [label "Preços Petrobras"]))
 
 (define painel_precos_petrobras (new horizontal-panel%
                                   [parent frame_principal]
@@ -661,6 +661,15 @@
 (send texto_precos_petrobras insert (cria_data_valores petrobras ""))
 
 (send canvas_precos_petrobras set-editor texto_precos_petrobras)
+
+(define mensagem_correl_1 (new message% [label "Correlação Google e Microsoft: 0.1603697511597682"]
+                            [parent frame_principal]))
+
+(define mensagem_correl_2 (new message% [label "Correlação Google e Petrobras: -0.07983751056172986"]
+                            [parent frame_principal]))
+
+(define mensagem_correl_3 (new message% [label "Correlação Microsoft e Petrobras: 0.6372067611546479"]
+                            [parent frame_principal]))
 
 (define botao_graficos (new button%
                             [label "Gerar Gráficos"]
