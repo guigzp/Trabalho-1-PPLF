@@ -567,8 +567,8 @@
 
 (define frame_principal (new frame%
                              [label "Trabalho PPLF - Guilherme"]
-                             [width 300]
-                             [height 300]))
+                             [width 500]
+                             [height 500]))
 
 (define frame_pede_periodo (new frame%
                                 [label "Período da Simulação"]
@@ -597,36 +597,73 @@
                                                 (send frame_pede_periodo show #f)
                                                 (send frame_compra_venda show #t))]))
 
+(define mensagem1 (new message% [parent frame_principal]
+                       [label "Preços Google"]))
+
 (define painel_precos_google (new horizontal-panel%
                                   [parent frame_principal]
-                                  [alignment '(left top)]))
+                                  [alignment '(center center)]))
 
 (define canvas_precos_google (new editor-canvas%
                                   [parent painel_precos_google]
                                   [style '(transparent)]
                                  ))
 
-(define texto_precos (new text%))
+(define texto_precos_google (new text%))
+
+(define mensagem2 (new message% [parent frame_principal]
+                       [label "Preços Microsoft"]))
+
+(define painel_precos_microsoft (new horizontal-panel%
+                                  [parent frame_principal]
+                                  [alignment '(center center)]))
+
+(define canvas_precos_microsoft (new editor-canvas%
+                                  [parent painel_precos_microsoft]
+                                  [style '(transparent)]
+                                 ))
+
+(define texto_precos_microsoft (new text%))
+
+(define mensagem3 (new message% [parent frame_principal]
+                       [label "Petrobras"]))
+
+(define painel_precos_petrobras (new horizontal-panel%
+                                  [parent frame_principal]
+                                  [alignment '(center center)]))
+
+(define canvas_precos_petrobras (new editor-canvas%
+                                  [parent painel_precos_petrobras]
+                                  [style '(transparent)]
+                                 ))
+
+(define texto_precos_petrobras (new text%))
 
 (define (cria_data_valores lst string)
   (cond [(empty? lst) string]
         [else (set! string (string-append string "Data: " (dados_acoes-date (first lst)) " Fechamento: " (number->string (dados_acoes-close (first lst))) "\n"))
               (cria_data_valores (rest lst) string) ]))
 
-(send texto_precos insert (cria_data_valores google ""))
+(send texto_precos_google insert (cria_data_valores google ""))
 
-(send canvas_precos_google set-editor texto_precos)
+(send canvas_precos_google set-editor texto_precos_google)
+
+(send texto_precos_microsoft insert (cria_data_valores microsoft ""))
+
+(send canvas_precos_microsoft set-editor texto_precos_microsoft)
+
+(send texto_precos_petrobras insert (cria_data_valores petrobras ""))
+
+(send canvas_precos_petrobras set-editor texto_precos_petrobras)
 
 (define botao_graficos (new button%
                             [label "Gerar Gráficos"]
-                            [horiz-margin 0]
                             [parent frame_principal]
                             [callback (lambda (button event)
                                         (send frame_gera_grafico show #t))]))
 
 (define botao_simulacao (new button%
                             [label "Iniciar Simulações"]
-                            [horiz-margin 0]
                             [parent frame_principal]
                             [callback (lambda (button event)
                                         (send frame_pede_periodo show #t))]))
