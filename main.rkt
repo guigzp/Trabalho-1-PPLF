@@ -11,10 +11,6 @@
 (define (ler_arquivo nome_arquivo)
   (call-with-input-file nome_arquivo
                         csv->list))
-; String -> Lista
-; Função que recebe uma String e devolve uma Lista com os elementos da String original separados por ";"
-(define (separa string)
-  (string-split string "," #:repeat? #t))
 
 ; Le o .csv para arquivo
 (define arquivo (ler_arquivo "dados.csv"))
@@ -74,6 +70,7 @@
   (define m (length acao1))
   ( / (- xy (/ (* x y) m)) (sqrt (* ( - yquadrado (/ (* y y) m)) ( - xquadrado (/ (* x x) m))))))
 
+; Listas desordenadas de cada uma das ações para testes de ordenação
 (define google_desordenado (shuffle google))
 (define petrobras_desordenado (shuffle petrobras))
 (define microsoft_desordenado (shuffle microsoft))
@@ -120,7 +117,8 @@
          (define media_exponencial (+ (* k ( - (dados_acoes-close (first lst)) media_anterior)) media_anterior))
          (cons media_exponencial (media_movel_exponencial (rest lst) n media_exponencial))]))
 
-; Avança lista
+; Lista, numero -> lista
+; Avança na lista numero posições
 (define (avanca_lista acao qtd)
   (cond [(= qtd 0) acao]
         [else (avanca_lista (rest acao) (sub1 qtd))]))
@@ -132,32 +130,33 @@
   (define primeira_media (first (media_movel acao n)))
   (cons primeira_media (media_movel_exponencial (avanca_lista acao n) n primeira_media))]))
 
+; Lista, Lista -> Lista
 ; Diferença entre duas listas 
 (define (lista1_menos_lista2 lst1 lst2)
   (cond [(empty? lst1) empty]
         [(empty? lst2) empty]
         [else (cons (- (first lst1) (first lst2)) (lista1_menos_lista2 (rest lst1) (rest lst2)))]))
 
+; Lista -> Lista
 ; MACD = Media exponencial de 12 dias - Media exponencial de 26 dias
 (define (macd acao)
   (lista1_menos_lista2 (media_exponencial acao 12) (media_exponencial acao 26)))
 
-
-; Primeira Soma Média
-(define (primeira_soma_media tipo lista quantidade)
+; Soma Média de acordo com o tipo, > para Ganho Medio, < para Perda Media
+(define (soma_media tipo lista quantidade)
   (cond [(= 0 quantidade) 0]
         [(tipo (dados_acoes-close (second lista)) (dados_acoes-close (first lista)))
                (define valor (abs (- (dados_acoes-close (second lista)) (dados_acoes-close (first lista)))))
-               (+ valor (primeira_soma_media tipo (rest lista) (sub1 quantidade)))]
-        [else (primeira_soma_media tipo (rest lista) (sub1 quantidade))]))
+               (+ valor (soma_media tipo (rest lista) (sub1 quantidade)))]
+        [else (soma_media tipo (rest lista) (sub1 quantidade))]))
 
 ; Primeira Perda Média
 (define (primeira_perda_media lista quantidade)
-  (/ (primeira_soma_media < lista (sub1 quantidade)) quantidade))
+  (/ (soma_media < lista (sub1 quantidade)) quantidade))
 
 ; Primeiro Ganho Médio
 (define (primeiro_ganho_medio lista quantidade)
-  (/ (primeira_soma_media > lista (sub1 quantidade)) quantidade))
+  (/ (soma_media > lista (sub1 quantidade)) quantidade))
 
 
 ; Força Relativa
@@ -201,37 +200,40 @@
         [else (proxima_data (rest lista_datas ) data opcao)]))
 
 ; String -> String
-; Chama a anterior data para calcular a data posterior da passada e a devolve
+; Chama a proxima_data para calcular a data posterior da passada e a devolve
 (define (posterior_data_valida data)
   (define nova_data (proxima_data (inverte_datas datas) (inverte data)  string<?))
   (cond [(empty? nova_data) empty]
         [else (inverte nova_data)]))
 
 ; String -> String
-; Chama a anterior data para calcular a data anterior da passada e a devolve
+; Chama a proxima_data para calcular a data anterior da passada e a devolve
 (define (anterior_data_valida data)
   (define nova_data (proxima_data (reverse (inverte_datas datas)) (inverte data)  string>?) )
   (cond [(empty? nova_data) empty]
         [else (inverte nova_data)]))
 
 ; Lista de acoes, String -> Numero
-; Devolve o valor de fechemato da ação no dia passado
+; Devolve o valor de fechamento da ação no dia passado
 (define (valor_acao_dia acao data)
   (cond [(equal? data (dados_acoes-date (first acao))) (dados_acoes-close (first acao))]
         [else (valor_acao_dia (rest acao) data)]))
-        
+
+; Testes unitários de ordenação
 (define ordenacao-tests
   (test-suite "Testes Ordenacao"
               (check-equal? (ordena_data google_desordenado) google)
               (check-equal? (ordena_data petrobras_desordenado) petrobras)
               (check-equal? (ordena_data microsoft_desordenado) microsoft)))
 
+; Testes unitários de correlação
 (define correlacao-tests
   (test-suite "Testes Correlacao"
               (check-equal? (correlacao google microsoft) 0.1603697511597682)
               (check-equal? (correlacao google petrobras) -0.07983751056172986)
               (check-equal? (correlacao microsoft petrobras) 0.6372067611546479)))
 
+; Testes unitários de proxima e anterior data 
 (define data-tests
   (test-suite "Testes Data"
               (check-equal? (posterior_data_valida "02/01/2018") "03/01/2018")
@@ -239,24 +241,28 @@
               (check-equal? (anterior_data_valida "03/01/2018") "02/01/2018")
               (check-equal? (anterior_data_valida "01/05/2018") "30/04/2018")))
 
+; Testes unitários de Media Movel Simples
 (define media_movel-tests
   (test-suite "Teste Media Movel Simples"
               (check-equal? (first (media_movel google 10)) 1100.145996)
               (check-equal? (first (media_movel microsoft 10)) 87.79499960000001)
               (check-equal? (first (media_movel petrobras 10)) 11.171000000000001)))
 
+; Testes unitários de Media Movel Exponencial
 (define media_movel_exponencial-tests
   (test-suite "Teste Media Movel Exponencial"
               (check-equal? (first (media_exponencial google 14)) 1111.1821462857145)
               (check-equal? (first (media_exponencial microsoft 14)) 88.55714242857142)
               (check-equal? (first (media_exponencial petrobras 14)) 11.454999999999998)))
 
+; Testes unitários de RSI
 (define rsi-tests
   (test-suite "Teste RSI"
               (check-equal? (first (rsi google 14)) 93.30480987894174)
               (check-equal? (first (rsi microsoft 14)) 80.23506410256401)
               (check-equal? (first (rsi petrobras 14)) 91.00529100529101)))
 
+; Testes unitários de MACD
 (define macd-tests
   (test-suite "Teste MACD"
               (check-equal? (first (macd google)) -18.221595237179372)
@@ -291,6 +297,11 @@
          [(opcao valor (first lst))(menor_maior_lista opcao (rest lst) valor) ]
          [else (menor_maior_lista opcao (rest lst) (first lst)) ]))
 
+
+; ------------------- Inicio da Implementação da Interface Gráfica -----------------------------
+
+
+; Frame para gerar os gráficos
 (define frame_gera_grafico (new frame% [label "Gráficos das Ações"]))
 
 (define msg (new message% [parent frame_gera_grafico]
@@ -384,6 +395,10 @@
 
   (send frame-grafico show #t))
 
+
+
+
+; Frame de Simulação de Compra e Venda
 (define frame_compra_venda (new frame% [label "Simulador de Compra e Venda"]
                                 [width 500]
                                 [height 500]))
@@ -492,6 +507,9 @@
                     )]))
 
 
+
+
+; Frame final da simulação para mostrar o prejuízo ou lucro
 (define frame_final_simulacao (new frame% [label "Simulação Compra e Venda"]))
 
 (define mensagem_final_simulacao (new message% [label ""]
@@ -571,11 +589,8 @@
                            [callback (lambda (button event)
                                        (terminar))]))
 
-(define frame_principal (new frame%
-                             [label "Trabalho PPLF - Guilherme"]
-                             [width 500]
-                             [height 500]))
 
+; Frame para pedir uma data para o ínicio da simulação de compra e venda (caso seja passado uma data inválida é inciciado na primeira data)
 (define frame_pede_periodo (new frame%
                                 [label "Período da Simulação"]
                                 [height 50]
@@ -584,7 +599,7 @@
 
 (define pede_periodo (new message%
                           [parent frame_pede_periodo]
-                          [label "Digite uma data (DD/MM/AAAA) para iniciar a simulação ou deixe em branco para iniciar do começo"]
+                          [label "Digite uma data (DD/MM/AAAA) para iniciar a simulação\nCaso não seja informado uma data será iniciado em 02/01/2018"]
                           ))
 
 (define pede_data (new text-field%
@@ -602,6 +617,14 @@
                                                        [(not (empty? (posterior_data_valida data_digitada))) (atualiza (posterior_data_valida data_digitada))])
                                                 (send frame_pede_periodo show #f)
                                                 (send frame_compra_venda show #t))]))
+
+
+; Frame principal que mostra as listas de preços de cada ação e tem as opções para gráficos e simulação
+(define frame_principal (new frame%
+                             [label "Trabalho PPLF - Guilherme"]
+                             [width 500]
+                             [height 500]))
+
 
 (define mensagem1 (new message% [parent frame_principal]
                        [label "Preços Google"]))
