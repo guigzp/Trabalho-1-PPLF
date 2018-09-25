@@ -36,7 +36,7 @@ Consiste na criação de um programa utilizando a linguagem funcional Racket que
 
 O trabalho possui uma interface gráfica que abstrai a maioria das suas funcionalidades.
 
-Apresentacao em forma de slides completo em [Apresentacao](Trabalho-1-PPLF/Relatorio/apresentacao.pdf).
+Apresentacao em forma de slides completo em [Apresentacao](Relatorio/apresentacao.pdf).
 
 ## Programas Utilizados
 
