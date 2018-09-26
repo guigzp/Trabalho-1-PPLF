@@ -38,6 +38,14 @@ O trabalho possui uma interface gráfica que abstrai a maioria das suas funciona
 
 Apresentacao em forma de slides completo em [Apresentacao](Relatorio/apresentacao.pdf).
 
+## Sugestões
+
+* Aperfeiçoar o layout das interfaces e dos gráficos gerados
+
+* Corrigir o cálculo do RSI para quando não existe períodos de baixa
+
+* Simulação de Compra e Venda automatizada
+
 ## Programas Utilizados
 
 * IDE Dr Racket
